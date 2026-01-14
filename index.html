@@ -3,422 +3,521 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gamada Retro Quest</title>
+    <title>Gamada Console System</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
     <style>
-        /* --- RETRO AESTHETICS --- */
-        :root { --neon-blue: #00f3ff; --neon-pink: #ff00ff; --dark-bg: #0a0a0a; }
-        
+        /* --- CORE --- */
         body {
-            background-color: var(--dark-bg);
-            color: white;
+            background-color: #000;
+            overflow: hidden;
             font-family: 'Press Start 2P', cursive;
-            overflow: hidden;
-            touch-action: none; /* Mencegah zoom di HP */
             user-select: none;
+            touch-action: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100vw;
         }
 
-        /* Scanline Effect (Efek TV Tabung) */
-        .crt::before {
-            content: " ";
-            display: block;
-            position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 2;
-            background-size: 100% 2px, 3px 100%;
-            pointer-events: none;
-        }
-
-        /* Scaling Engine */
-        #game-container {
-            transform-origin: center center;
-            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            width: 900px;
-            height: 500px;
-            position: relative;
-            /* Border Retro Keren */
-            border: 4px solid #333;
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2), inset 0 0 50px rgba(0,0,0,0.8);
-            background: #111;
-            border-radius: 20px;
-            overflow: hidden;
-        }
-
-        /* Utilities */
-        .center-flex { display: flex; align-items: center; justify-content: center; }
-        .hidden { display: none !important; }
-        
-        /* Orientation Warning */
+        /* --- LANDSCAPE ENFORCER --- */
         #rotate-lock {
-            position: fixed; inset: 0; z-index: 9999; background: #0f172a;
-            display: none; flex-direction: column; align-items: center; justify-content: center;
+            display: none; position: fixed; inset: 0; z-index: 9999;
+            background: #111; flex-direction: column; align-items: center; justify-content: center;
+            color: #fbbf24; text-align: center;
         }
         @media screen and (max-width: 768px) and (orientation: portrait) {
             #rotate-lock { display: flex; }
-            #app-root { display: none; }
+            #console-body { display: none !important; }
         }
 
-        /* SOS Grid Animation */
-        .sos-cell {
-            background: #1e293b; border: 2px solid #334155;
+        /* --- CONSOLE DESIGN --- */
+        #console-body {
+            width: 900px; height: 450px;
+            background: #151515;
+            border-radius: 60px;
+            box-shadow: 0 0 0 10px #222, 0 20px 50px rgba(0,0,0,0.8);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 40px;
+            position: relative;
+            transform-origin: center;
+            transition: transform 0.3s ease;
+        }
+
+        /* SCREEN */
+        #main-screen {
+            width: 520px; height: 300px;
+            background: #000;
+            border: 4px solid #333;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* Scanline Effect */
+        .scanlines::after {
+            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 50; background-size: 100% 2px, 3px 100%; pointer-events: none;
+        }
+
+        /* BUTTON STYLES */
+        .btn-action {
+            width: 45px; height: 45px;
+            background: #2a2a2a; border-radius: 50%;
+            border-bottom: 4px solid #000;
             display: flex; align-items: center; justify-content: center;
-            font-size: 20px; cursor: pointer; transition: 0.2s;
+            font-size: 18px; color: #555;
+            cursor: pointer; transition: all 0.1s;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.5);
         }
-        .sos-cell:active { transform: scale(0.9); }
-        .sos-cell.winner { background: #22c55e; color: black; animation: pulse 0.5s infinite; }
-
-        /* Animations */
-        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .btn-action:active { transform: translateY(4px); border-bottom: 0; box-shadow: none; color: #fff; }
         
-        .pop-up-anim { animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        /* SOS GRID */
+        .sos-cell {
+            background: #1e293b; border: 2px solid #475569;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; color: white; cursor: pointer;
+        }
+        .sos-cell:hover { background: #334155; }
+        .sos-cell.s-char { color: #60a5fa; text-shadow: 0 0 5px #60a5fa; }
+        .sos-cell.o-char { color: #f87171; text-shadow: 0 0 5px #f87171; }
+
+        /* PUZZLE GRID */
+        .puzzle-tile {
+            background-image: url('https://image2url.com/r2/bucket1/images/1768407021319-4927f804-d922-4402-9907-f376f92024b4.png'); /* Gambar Gamada Pixel */
+            background-size: 300px 300px; /* Sesuai ukuran container puzzle */
+            cursor: pointer; border: 1px solid #000;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0; /* Hide numbers if needed, set to 20px to debug */
+            color: rgba(255,255,255,0.5);
+        }
+        .puzzle-empty { background: #111; border: none; }
+
+        /* MODAL POPUP */
+        .modal-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.9);
+            z-index: 100; display: flex; flex-col; align-items: center; justify-content: center;
+            text-align: center; padding: 20px;
+        }
     </style>
 </head>
 <body>
 
     <div id="rotate-lock">
-        <i class="fas fa-sync-alt text-6xl text-yellow-400 animate-spin mb-4" style="animation-duration:3s"></i>
-        <h1 class="text-xs text-yellow-400 mb-2">PUTAR HP KAMU</h1>
-        <p class="text-[8px] text-gray-400">Mode Landscape Diperlukan</p>
+        <i class="fas fa-sync-alt text-6xl mb-6 animate-spin"></i>
+        <h1 class="text-sm mb-2">MODE LANDSCAPE WAJIB</h1>
+        <p class="text-[10px] text-gray-500">Putar HP agar konsol muat</p>
     </div>
 
-    <div id="app-root" class="fixed inset-0 bg-black flex items-center justify-center">
+    <div id="console-body">
         
-        <div class="absolute inset-0 opacity-10" 
-             style="background-image: linear-gradient(#4ade80 1px, transparent 1px), linear-gradient(90deg, #4ade80 1px, transparent 1px); background-size: 40px 40px;">
+        <div class="flex flex-col gap-6">
+            <div class="relative w-32 h-32 bg-[#222] rounded-full border-4 border-black shadow-inner flex items-center justify-center">
+                <div class="absolute w-10 h-28 bg-[#151515] rounded"></div>
+                <div class="absolute w-28 h-10 bg-[#151515] rounded"></div>
+                <div onclick="consoleBtn('UP')" class="absolute top-0 w-10 h-10 cursor-pointer flex justify-center pt-1 hover:text-white text-gray-600"><i class="fas fa-caret-up"></i></div>
+                <div onclick="consoleBtn('DOWN')" class="absolute bottom-0 w-10 h-10 cursor-pointer flex justify-center pb-1 hover:text-white text-gray-600"><i class="fas fa-caret-down"></i></div>
+                <div onclick="consoleBtn('LEFT')" class="absolute left-0 w-10 h-10 cursor-pointer flex items-center pl-1 hover:text-white text-gray-600"><i class="fas fa-caret-left"></i></div>
+                <div onclick="consoleBtn('RIGHT')" class="absolute right-0 w-10 h-10 cursor-pointer flex items-center pr-1 hover:text-white text-gray-600"><i class="fas fa-caret-right"></i></div>
+                <div class="absolute w-8 h-8 bg-[#222] rounded-full z-10"></div> </div>
+            <div class="w-16 h-16 bg-[#222] rounded-full border-4 border-black shadow-xl mx-auto flex items-center justify-center">
+                <div class="w-12 h-12 bg-[#333] rounded-full border border-gray-600 grid place-items-center"><div class="w-10 h-10 bg-[#222] rounded-full opacity-50"></div></div>
+            </div>
         </div>
 
-        <a href="index.html" class="absolute top-4 left-4 z-50 text-red-500 border border-red-500 px-3 py-2 rounded text-[8px] hover:bg-red-500 hover:text-white transition cursor-pointer">
-            <i class="fas fa-power-off mr-2"></i>KELUAR
-        </a>
-
-        <div id="start-screen" class="absolute z-40 text-center animate-bounce">
-            <h1 class="text-3xl md:text-5xl text-yellow-400 mb-4" style="text-shadow: 4px 4px 0 #000;">GAMADA QUEST</h1>
-            <p class="text-[10px] text-blue-300 mb-8">Selesaikan 3 Level untuk Masuk</p>
-            <button onclick="startGame()" class="bg-blue-600 border-b-4 border-blue-800 text-white px-8 py-4 rounded text-xs hover:scale-105 transition active:border-b-0 active:translate-y-1">
-                START MISSION ▶
-            </button>
-        </div>
-
-        <div id="game-container" class="hidden crt">
+        <div id="main-screen" class="scanlines">
             
-            <div id="lvl-1" class="absolute inset-0 bg-gray-900 z-10 hidden flex-col items-center justify-center">
-                <div class="absolute top-4 w-full text-center">
-                    <h2 class="text-yellow-400 text-sm">LVL 1: SOS BATTLE</h2>
-                    <p class="text-[8px] text-gray-400 mt-1">Bentuk S-O-S (Horizontal/Vertikal)</p>
+            <div id="screen-start" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-40">
+                <h1 class="text-yellow-400 text-xl mb-6 animate-pulse text-shadow">GAMADA SYSTEM</h1>
+                <button onclick="startGame()" class="px-6 py-3 bg-blue-600 border-b-4 border-blue-800 text-white text-[10px] rounded hover:scale-105 active:border-b-0 active:translate-y-1">
+                    TEKAN UNTUK MULAI
+                </button>
+            </div>
+
+            <div id="screen-sos" class="absolute inset-0 bg-gray-800 hidden flex flex-col items-center p-2">
+                <div class="w-full flex justify-between px-2 mb-2 text-[8px]">
+                    <span class="text-yellow-400">LVL 1: SOS</span>
+                    <span class="text-white">SKOR: <span id="sos-score">0</span>/2</span>
                 </div>
-                
-                <div class="flex gap-8 mt-6">
-                    <div id="sos-board" class="grid grid-cols-6 gap-1 bg-gray-800 p-2 rounded border-4 border-gray-700"></div>
-                    
-                    <div class="flex flex-col gap-2 justify-center w-32">
-                        <div class="text-[8px] text-center mb-1">PILIH:</div>
-                        <div class="flex gap-2 justify-center">
-                            <button onclick="setLetter('S')" id="btn-s" class="w-10 h-10 bg-blue-600 rounded border-b-4 border-blue-800 text-white font-bold ring-2 ring-white">S</button>
-                            <button onclick="setLetter('O')" id="btn-o" class="w-10 h-10 bg-gray-600 rounded border-b-4 border-gray-700 text-white font-bold">O</button>
-                        </div>
-                        <div id="turn-indicator" class="mt-4 text-[8px] text-center text-green-400 blink">GILIRANMU</div>
+                <div id="sos-board" class="grid grid-cols-6 gap-1 bg-black p-1 border-2 border-gray-600 rounded">
                     </div>
+                <div class="flex gap-4 mt-2 items-center">
+                    <div class="text-[8px] text-gray-400">PILIH:</div>
+                    <button onclick="setSosChar('S')" id="btn-sos-s" class="w-8 h-8 bg-blue-600 text-white rounded font-bold text-xs ring-2 ring-white">S</button>
+                    <button onclick="setSosChar('O')" id="btn-sos-o" class="w-8 h-8 bg-gray-600 text-white rounded font-bold text-xs">O</button>
+                </div>
+                <div id="tut-sos" class="modal-overlay">
+                    <h3 class="text-yellow-400 text-xs mb-2">CARA MAIN SOS</h3>
+                    <p class="text-[8px] text-gray-300 leading-relaxed mb-4">
+                        1. Pilih huruf S atau O.<br>
+                        2. Klik kotak kosong.<br>
+                        3. Bentuk pola S-O-S (Lurus/Miring).<br>
+                        4. Buat 2x SOS untuk MENANG!
+                    </p>
+                    <button onclick="closeModal('tut-sos')" class="px-4 py-2 bg-green-600 text-[8px] rounded">MENGERTI (X)</button>
                 </div>
             </div>
 
-            <div id="lvl-2" class="absolute inset-0 bg-gray-900 z-10 hidden flex-col items-center justify-center">
-                <h2 class="text-green-400 text-sm mb-6">LVL 2: MEMORY</h2>
-                <p id="mem-status" class="text-[8px] mb-4 text-gray-300">Perhatikan Pola...</p>
-                <div class="grid grid-cols-2 gap-4">
-                    <div id="p-1" onclick="memClick(1)" class="w-24 h-24 bg-green-900 border-4 border-green-600 rounded transition opacity-60 hover:opacity-80 active:bg-green-400"></div>
-                    <div id="p-2" onclick="memClick(2)" class="w-24 h-24 bg-red-900 border-4 border-red-600 rounded transition opacity-60 hover:opacity-80 active:bg-red-400"></div>
-                    <div id="p-3" onclick="memClick(3)" class="w-24 h-24 bg-yellow-900 border-4 border-yellow-600 rounded transition opacity-60 hover:opacity-80 active:bg-yellow-400"></div>
-                    <div id="p-4" onclick="memClick(4)" class="w-24 h-24 bg-blue-900 border-4 border-blue-600 rounded transition opacity-60 hover:opacity-80 active:bg-blue-400"></div>
+            <div id="screen-mem" class="absolute inset-0 bg-gray-900 hidden flex flex-col items-center justify-center p-4">
+                <h2 class="text-green-400 text-xs mb-4">LVL 2: MEMORY</h2>
+                <p id="mem-status" class="text-[8px] text-gray-400 mb-6 h-4">Tunggu...</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <div id="mem-1" onclick="memInput(1)" class="w-24 h-24 bg-green-900 border-4 border-green-600 rounded active:bg-green-400 transition cursor-pointer"></div>
+                    <div id="mem-2" onclick="memInput(2)" class="w-24 h-24 bg-red-900 border-4 border-red-600 rounded active:bg-red-400 transition cursor-pointer"></div>
+                    <div id="mem-3" onclick="memInput(3)" class="w-24 h-24 bg-yellow-900 border-4 border-yellow-600 rounded active:bg-yellow-400 transition cursor-pointer"></div>
+                    <div id="mem-4" onclick="memInput(4)" class="w-24 h-24 bg-blue-900 border-4 border-blue-600 rounded active:bg-blue-400 transition cursor-pointer"></div>
+                </div>
+                <div id="tut-mem" class="modal-overlay">
+                    <h3 class="text-green-400 text-xs mb-2">CARA MAIN MEMORY</h3>
+                    <p class="text-[8px] text-gray-300 leading-relaxed mb-4">
+                        1. Hafalkan urutan lampu.<br>
+                        2. Ulangi urutan tersebut.<br>
+                        3. Jangan sampai salah!
+                    </p>
+                    <button onclick="startMemGame()" class="px-4 py-2 bg-green-600 text-[8px] rounded">SIAP! (X)</button>
                 </div>
             </div>
 
-            <div id="lvl-3" class="absolute inset-0 bg-gray-900 z-10 hidden flex-col items-center justify-center">
-                <h2 class="text-pink-400 text-sm mb-2">LVL 3: TEBAK GAMBAR</h2>
-                
-                <div class="relative w-32 h-32 bg-white rounded-full border-4 border-gray-600 overflow-hidden mb-6 flex items-center justify-center">
-                    <div id="q-img" class="text-[8rem] absolute transform scale-[4] translate-y-4 blur-[1px]">🎤</div>
-                </div>
-
-                <div id="q-options" class="grid grid-cols-2 gap-3 w-3/4">
+            <div id="screen-puz" class="absolute inset-0 bg-[#1a1a1a] hidden flex flex-col items-center justify-center">
+                <h2 class="text-pink-400 text-xs mb-2">LVL 3: SLIDING PUZZLE</h2>
+                <div id="puzzle-container" class="relative w-[180px] h-[180px] bg-black border-2 border-gray-500">
                     </div>
-                <p id="q-msg" class="text-[8px] h-4 mt-2 text-red-400"></p>
+                <p class="text-[6px] text-gray-500 mt-2">Susun wajah Gamada!</p>
+                
+                <div id="tut-puz" class="modal-overlay">
+                    <h3 class="text-pink-400 text-xs mb-2">PUZZLE GAMADA</h3>
+                    <p class="text-[8px] text-gray-300 leading-relaxed mb-4">
+                        Geser kotak ke area kosong<br>
+                        untuk menyusun gambar utuh.<br>
+                        (Gambar: Karakter Pixel Gamada)
+                    </p>
+                    <button onclick="closeModal('tut-puz')" class="px-4 py-2 bg-green-600 text-[8px] rounded">GAS! (X)</button>
+                </div>
             </div>
 
-            <div id="lvl-final" class="absolute inset-0 bg-[#111] z-20 hidden flex items-center justify-center">
-                
-                <div class="relative w-[800px] h-[380px] bg-[#1a1a1a] rounded-[50px] shadow-[0_10px_30px_rgba(0,0,0,0.8)] border-b-[6px] border-black flex items-center justify-between px-10 scale-90">
-                    
-                    <div class="flex flex-col gap-4">
-                        <div class="w-24 h-24 bg-[#222] rounded-full border-2 border-black flex items-center justify-center shadow-inner relative">
-                            <div class="absolute w-8 h-20 bg-[#111] rounded"></div>
-                            <div class="absolute w-20 h-8 bg-[#111] rounded"></div>
-                            <i class="fas fa-caret-up absolute top-1 text-gray-600"></i>
-                            <i class="fas fa-caret-down absolute bottom-1 text-gray-600"></i>
-                            <i class="fas fa-caret-left absolute left-1 text-gray-600"></i>
-                            <i class="fas fa-caret-right absolute right-1 text-gray-600"></i>
-                        </div>
-                        <div class="w-12 h-12 bg-[#222] rounded-full border-2 border-black shadow-lg mx-auto flex items-center justify-center">
-                            <div class="w-8 h-8 bg-[#333] rounded-full border border-gray-600"></div>
-                        </div>
+            <div id="screen-vid" class="absolute inset-0 bg-black hidden">
+                <video id="game-video" class="w-full h-full object-cover" playsinline>
+                    <source src="https://image2url.com/r2/default/videos/1768394132781-01d59a63-23e0-43fe-aeaa-29c206bfe40b.mp4" type="video/mp4">
+                </video>
+                <div class="absolute bottom-0 w-full p-2 bg-gradient-to-t from-black/80 to-transparent flex flex-col gap-1 opacity-0 hover:opacity-100 transition duration-300">
+                    <input type="range" id="vid-slider" class="w-full h-1 bg-gray-600 appearance-none rounded cursor-pointer">
+                    <div class="flex justify-between text-[6px] text-gray-300">
+                        <span id="vid-cur">00:00</span>
+                        <span id="vid-dur">00:00</span>
                     </div>
-
-                    <div class="relative w-[480px] h-[272px] bg-black border-[4px] border-[#222] rounded shadow-inner overflow-hidden group">
-                        <video id="final-video" class="w-full h-full object-cover" playsinline>
-                            <source src="https://image2url.com/r2/default/videos/1768394132781-01d59a63-23e0-43fe-aeaa-29c206bfe40b.mp4" type="video/mp4">
-                        </video>
-                        
-                        <div class="absolute top-2 right-2 text-[6px] bg-black/50 px-2 rounded text-white/50">GAMADA TV</div>
-
-                        <div id="rpg-popup" class="hidden absolute inset-0 z-50 flex items-end justify-center pb-2 bg-black/70 backdrop-blur-sm">
-                            <div class="relative w-[95%] flex items-end pop-up-anim">
-                                <img src="https://image2url.com/r2/bucket1/images/1768407021319-4927f804-d922-4402-9907-f376f92024b4.png" 
-                                     class="w-20 z-10 -mr-4 drop-shadow-xl filter brightness-110">
-                                
-                                <div class="flex-1 bg-blue-900 border-[3px] border-white shadow-[4px_4px_0_black] p-2 rounded relative z-0">
-                                    <div class="absolute -top-3 left-0 bg-yellow-400 border border-white px-2 shadow-sm">
-                                        <span class="text-blue-900 text-[6px] font-bold">INFO_BOT</span>
-                                    </div>
-                                    <p class="text-white text-[6px] leading-relaxed mt-1 mb-1">
-                                        Selamat! Kamu berhasil menamatkan misi.<br>
-                                        Jangan lupa <span class="text-yellow-300">Scan QR Code</span> di video ya!<br>
-                                        Gabung grup WA sekarang.
-                                    </p>
-                                    <div class="flex justify-end gap-2 pt-1 border-t border-blue-700 mt-1">
-                                        <button onclick="vidReplay()" class="px-2 py-0.5 bg-gray-600 text-white text-[6px] border border-white">ULANG</button>
-                                        <a href="https://padlet.com" target="_blank" class="px-2 py-0.5 bg-yellow-500 text-blue-900 font-bold text-[6px] border border-white">PADLET ➤</a>
-                                    </div>
-                                </div>
+                </div>
+                
+                <div id="end-popup" class="modal-overlay hidden bg-black/80! items-end! pb-4!">
+                    <div class="relative w-full flex items-end">
+                        <img src="https://image2url.com/r2/bucket1/images/1768407021319-4927f804-d922-4402-9907-f376f92024b4.png" class="w-20 z-10 -mr-4 drop-shadow-lg filter brightness-110">
+                        <div class="flex-1 bg-blue-900 border-2 border-white p-2 rounded text-left relative">
+                            <div class="absolute -top-2 left-0 bg-yellow-400 px-1 border border-white"><span class="text-[6px] text-blue-900 font-bold">INFO_BOT</span></div>
+                            <p class="text-white text-[6px] mt-2 leading-relaxed">
+                                Selamat! Semua misi selesai.<br>
+                                Silakan <span class="text-yellow-300">Scan QR Code</span> di video.<br>
+                                Ada pertanyaan? Cek Padlet.
+                            </p>
+                            <div class="flex justify-end gap-2 mt-2 pt-1 border-t border-blue-700">
+                                <button onclick="replayVid()" class="text-[6px] bg-gray-600 px-2 py-1 text-white border border-white">ULANG</button>
+                                <a href="https://padlet.com" target="_blank" class="text-[6px] bg-yellow-500 px-2 py-1 text-blue-900 border border-white font-bold">PADLET</a>
                             </div>
                         </div>
                     </div>
-
-                    <div class="flex flex-col gap-4">
-                        <div class="w-24 h-24 bg-[#222] rounded-full border-2 border-black shadow-inner grid grid-cols-3 grid-rows-3 p-1 rotate-45">
-                            <button onclick="vidToggle()" class="col-start-2 row-start-1 -rotate-45 active:scale-90"><i class="fas fa-caret-up text-green-500 text-xl"></i></button>
-                            <button onclick="vidFull()" class="col-start-3 row-start-2 -rotate-45 active:scale-90"><i class="far fa-circle text-red-500 text-lg font-bold"></i></button>
-                            <button onclick="vidReplay()" class="col-start-2 row-start-3 -rotate-45 active:scale-90"><i class="fas fa-times text-blue-500 text-lg"></i></button>
-                            <button onclick="vidMute()" class="col-start-1 row-start-2 -rotate-45 active:scale-90"><i class="far fa-square text-pink-500 text-sm font-bold"></i></button>
-                        </div>
-                        <div class="w-12 h-12 bg-[#222] rounded-full border-2 border-black shadow-lg mx-auto flex items-center justify-center"><div class="w-8 h-8 bg-[#333] rounded-full border border-gray-600"></div></div>
-                    </div>
-
-                    <div class="absolute bottom-2 w-full text-center left-0 text-[8px] text-gray-600 font-bold tracking-[0.5em]">PS VITA</div>
                 </div>
             </div>
 
         </div>
+
+        <div class="flex flex-col gap-6">
+            <div class="relative w-32 h-32 bg-[#222] rounded-full border-4 border-black shadow-inner grid grid-cols-3 grid-rows-3 p-2 rotate-45">
+                <div onclick="consoleBtn('TRIANGLE')" class="btn-action col-start-2 row-start-1 -rotate-45 -mt-2 group"><i class="fas fa-caret-up text-green-500 group-active:text-white"></i></div>
+                <div onclick="consoleBtn('CIRCLE')" class="btn-action col-start-3 row-start-2 -rotate-45 group"><i class="far fa-circle text-red-500 font-bold group-active:text-white"></i></div>
+                <div onclick="consoleBtn('CROSS')" class="btn-action col-start-2 row-start-3 -rotate-45 -mb-2 group"><i class="fas fa-times text-blue-500 group-active:text-white"></i></div>
+                <div onclick="consoleBtn('SQUARE')" class="btn-action col-start-1 row-start-2 -rotate-45 -ml-2 group"><i class="far fa-square text-pink-500 font-bold group-active:text-white"></i></div>
+            </div>
+            <div class="w-16 h-16 bg-[#222] rounded-full border-4 border-black shadow-xl mx-auto flex items-center justify-center">
+                <div class="w-12 h-12 bg-[#333] rounded-full border border-gray-600 grid place-items-center"><div class="w-10 h-10 bg-[#222] rounded-full opacity-50"></div></div>
+            </div>
+        </div>
+
+        <div class="absolute bottom-4 left-0 right-0 text-center pointer-events-none">
+            <span class="text-[10px] text-gray-600 font-bold tracking-[0.5em]">PS VITA</span>
+        </div>
+
     </div>
 
     <script>
-        // --- ENGINE VARS ---
-        const container = document.getElementById('game-container');
-        let currentLevel = 0;
-
-        // --- INIT ---
-        function startGame() {
-            document.getElementById('start-screen').classList.add('hidden');
-            document.getElementById('game-container').classList.remove('hidden');
-            
-            // Fullscreen Attempt
-            const el = document.documentElement;
-            if(el.requestFullscreen) el.requestFullscreen().catch(()=>{});
-            
-            // Auto Scale
-            window.addEventListener('resize', autoScale);
-            autoScale();
-
-            // Start Lvl 1
-            goToLevel(1);
-        }
-
-        function autoScale() {
+        // --- SYSTEM SCALING ---
+        const consoleBody = document.getElementById('console-body');
+        function scaleConsole() {
             const w = window.innerWidth;
             const h = window.innerHeight;
-            // Target size 900x500
-            const scale = Math.min(w / 950, h / 550);
-            container.style.transform = `scale(${scale})`;
+            const scale = Math.min(w / 950, h / 500); // 950x500 is base size + margin
+            consoleBody.style.transform = `scale(${scale})`;
+        }
+        window.addEventListener('resize', scaleConsole);
+        window.addEventListener('load', scaleConsole);
+
+        // --- GLOBAL STATE ---
+        let state = 'START'; // START, SOS, MEMORY, PUZZLE, VIDEO
+
+        function startGame() {
+            document.getElementById('screen-start').classList.add('hidden');
+            goToLevel('SOS');
         }
 
         function goToLevel(lvl) {
-            ['lvl-1','lvl-2','lvl-3','lvl-final'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            state = lvl;
+            // Hide all screens
+            ['screen-sos', 'screen-mem', 'screen-puz', 'screen-vid'].forEach(id => document.getElementById(id).classList.add('hidden'));
             
-            if(lvl === 1) {
-                document.getElementById('lvl-1').classList.remove('hidden');
-                document.getElementById('lvl-1').classList.add('flex');
+            if(lvl === 'SOS') {
+                document.getElementById('screen-sos').classList.remove('hidden');
+                document.getElementById('tut-sos').style.display = 'flex';
                 initSOS();
-            } else if(lvl === 2) {
-                document.getElementById('lvl-2').classList.remove('hidden');
-                document.getElementById('lvl-2').classList.add('flex');
-                initMem();
-            } else if(lvl === 3) {
-                document.getElementById('lvl-3').classList.remove('hidden');
-                document.getElementById('lvl-3').classList.add('flex');
-                initQuiz();
-            } else {
-                document.getElementById('lvl-final').classList.remove('hidden');
-                document.getElementById('lvl-final').classList.add('flex');
-                setTimeout(() => document.getElementById('final-video').play(), 500);
+            } else if (lvl === 'MEMORY') {
+                document.getElementById('screen-mem').classList.remove('hidden');
+                document.getElementById('tut-mem').style.display = 'flex';
+                // Game starts after button click in modal
+            } else if (lvl === 'PUZZLE') {
+                document.getElementById('screen-puz').classList.remove('hidden');
+                document.getElementById('tut-puz').style.display = 'flex';
+                initPuzzle();
+            } else if (lvl === 'VIDEO') {
+                document.getElementById('screen-vid').classList.remove('hidden');
+                const v = document.getElementById('game-video');
+                v.currentTime = 0;
+                v.play();
             }
         }
 
-        // --- LVL 1: SOS LOGIC ---
-        let sosBoard = [], turn = 'S', isPlayer = true;
-        
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        // --- CONSOLE BUTTONS HANDLER ---
+        function consoleBtn(key) {
+            // Mapping tombol ke fungsi
+            if (state === 'VIDEO') {
+                const v = document.getElementById('game-video');
+                if (key === 'TRIANGLE') v.paused ? v.play() : v.pause();
+                if (key === 'CROSS') replayVid();
+                if (key === 'SQUARE') { v.muted = !v.muted; alert(v.muted ? "Muted" : "Unmuted"); }
+            }
+            if (key === 'CROSS') { // Universal Back/Close Modal
+                const modals = document.querySelectorAll('.modal-overlay');
+                modals.forEach(m => {
+                    if(m.style.display !== 'none' && m.id !== 'end-popup') {
+                        if(m.id === 'tut-mem') startMemGame();
+                        m.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // --- GAME 1: SOS (6x6 Grid) ---
+        let sosBoard = [], sosTurn = 'S', sosScore = 0;
         function initSOS() {
             const b = document.getElementById('sos-board');
             b.innerHTML = '';
-            sosBoard = Array(18).fill(null);
-            for(let i=0; i<18; i++) {
+            sosBoard = Array(36).fill(null);
+            sosScore = 0;
+            sosTurn = 'S';
+            document.getElementById('sos-score').innerText = '0';
+            updateSosBtn();
+
+            for(let i=0; i<36; i++) {
                 const d = document.createElement('div');
-                d.className = 'sos-cell';
-                d.id = `sos-${i}`;
-                d.onclick = () => sosClick(i);
+                d.className = 'sos-cell h-8 w-8 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-xs font-bold border border-gray-600';
+                d.onclick = () => clickSos(i, d);
                 b.appendChild(d);
             }
-            turn = 'S'; isPlayer = true;
-            document.getElementById('turn-indicator').innerText = "GILIRANMU";
-            updateBtnState();
         }
-
-        function setLetter(l) {
-            turn = l; updateBtnState();
+        function setSosChar(c) { sosTurn = c; updateSosBtn(); }
+        function updateSosBtn() {
+            document.getElementById('btn-sos-s').classList.toggle('ring-2', sosTurn==='S');
+            document.getElementById('btn-sos-o').classList.toggle('ring-2', sosTurn==='O');
         }
-
-        function updateBtnState() {
-            document.getElementById('btn-s').classList.toggle('ring-2', turn === 'S');
-            document.getElementById('btn-o').classList.toggle('ring-2', turn === 'O');
-        }
-
-        function sosClick(idx) {
-            if(!isPlayer || sosBoard[idx]) return;
-            makeMove(idx, turn);
-            if(checkWin(idx)) {
-                setTimeout(() => { alert("MENANG!"); goToLevel(2); }, 200);
-                return;
-            }
-            isPlayer = false;
-            document.getElementById('turn-indicator').innerText = "BOT MIKIR...";
-            setTimeout(botMove, 800);
-        }
-
-        function botMove() {
-            let empty = sosBoard.map((v, i) => v === null ? i : null).filter(v => v !== null);
-            if(empty.length === 0) { initSOS(); return; }
+        function clickSos(i, el) {
+            if(sosBoard[i]) return;
+            sosBoard[i] = sosTurn;
+            el.innerText = sosTurn;
+            el.classList.add(sosTurn === 'S' ? 's-char' : 'o-char');
             
-            let move = empty[Math.floor(Math.random() * empty.length)];
-            let char = Math.random() > 0.5 ? 'S' : 'O';
-            makeMove(move, char, true);
-            
-            if(checkWin(move)) {
-                setTimeout(() => { alert("BOT MENANG. ULANGI."); initSOS(); }, 200);
+            if(checkSosWin()) {
+                sosScore++;
+                document.getElementById('sos-score').innerText = sosScore;
+                if(sosScore >= 2) {
+                    setTimeout(() => { alert("SOS CLEAR!"); goToLevel('MEMORY'); }, 500);
+                }
             } else {
-                isPlayer = true;
-                document.getElementById('turn-indicator').innerText = "GILIRANMU";
+                // Bot move (simple random empty)
+                setTimeout(botSos, 300);
             }
         }
-
-        function makeMove(idx, char, isBot = false) {
-            sosBoard[idx] = char;
-            const el = document.getElementById(`sos-${idx}`);
+        function botSos() {
+            let empties = sosBoard.map((v,i)=>v===null?i:null).filter(v=>v!==null);
+            if(empties.length===0) return;
+            let move = empties[Math.floor(Math.random()*empties.length)];
+            let char = Math.random()>0.5 ? 'S':'O';
+            sosBoard[move] = char;
+            const el = document.getElementById('sos-board').children[move];
             el.innerText = char;
-            el.style.color = isBot ? '#f87171' : '#60a5fa';
+            el.style.color = '#999'; // Bot color
+        }
+        // Logic check SOS horizontal/vertical simple for grid
+        function checkSosWin() {
+            // Simplified: Just checking if new SOS formed is hard. 
+            // We just check board consistency. For this mini game, just increment score on any move for UX speed? 
+            // No, let's do a simple check.
+            // Horizontal check
+            let found = 0;
+            for(let r=0; r<6; r++) {
+                for(let c=0; c<4; c++) {
+                    let idx = r*6+c;
+                    if(sosBoard[idx]=='S' && sosBoard[idx+1]=='O' && sosBoard[idx+2]=='S') found++;
+                }
+            }
+            // Vertical
+            for(let c=0; c<6; c++) {
+                for(let r=0; r<4; r++) {
+                    let idx = r*6+c;
+                    if(sosBoard[idx]=='S' && sosBoard[idx+6]=='O' && sosBoard[idx+12]=='S') found++;
+                }
+            }
+            // If found > currentScore, user made a point (simplified logic)
+            // Ideally track specific lines, but for mini game:
+            let diff = found - (window.lastFound || 0);
+            if(diff > 0) { window.lastFound = found; return true; }
+            window.lastFound = found;
+            return false;
         }
 
-        function checkWin(idx) {
-            // Simple Horizontal Check for 3x6 grid
-            const row = Math.floor(idx / 6);
-            const col = idx % 6;
-            
-            // Cek Horizontal (S-O-S)
-            // Logic Sederhana: Cek string pattern di baris tersebut
-            let rStart = row * 6;
-            let line = sosBoard.slice(rStart, rStart+6).map(v => v || '_').join('');
-            return line.includes('SOS');
+        // --- GAME 2: MEMORY ---
+        let memSeq = [], playerSeq = [];
+        function startMemGame() {
+            document.getElementById('tut-mem').style.display = 'none';
+            memSeq = [];
+            nextMemRound();
         }
-
-        // --- LVL 2: MEMORY ---
-        let seq = [], uSeq = [];
-        function initMem() {
-            seq = []; addSeq();
+        function nextMemRound() {
+            playerSeq = [];
+            memSeq.push(Math.ceil(Math.random()*4));
+            playMemSeq();
         }
-        function addSeq() {
-            uSeq = [];
-            seq.push(Math.ceil(Math.random()*4));
-            playSeq();
-        }
-        function playSeq() {
-            let i=0;
-            document.getElementById('mem-status').innerText = "Hafalkan...";
-            const t = setInterval(() => {
-                hl(seq[i]); i++;
-                if(i>=seq.length) { clearInterval(t); document.getElementById('mem-status').innerText = "Giliranmu!"; }
+        function playMemSeq() {
+            let i = 0;
+            document.getElementById('mem-status').innerText = "LIHAT...";
+            const int = setInterval(() => {
+                flashMem(memSeq[i]); i++;
+                if(i>=memSeq.length) {
+                    clearInterval(int);
+                    document.getElementById('mem-status').innerText = "ULANGI!";
+                }
             }, 600);
         }
-        function hl(id) {
-            const el = document.getElementById('p-'+id);
+        function flashMem(id) {
+            const el = document.getElementById('mem-'+id);
             el.style.opacity = '1';
-            setTimeout(() => el.style.opacity = '0.6', 300);
+            setTimeout(()=>el.style.opacity = '0.6', 300);
         }
-        function memClick(id) {
-            hl(id); uSeq.push(id);
-            if(uSeq[uSeq.length-1] !== seq[uSeq.length-1]) {
-                alert("Salah!"); initMem(); return;
+        function memInput(id) {
+            flashMem(id);
+            playerSeq.push(id);
+            if(playerSeq[playerSeq.length-1] !== memSeq[playerSeq.length-1]) {
+                alert("SALAH! ULANGI."); startMemGame(); return;
             }
-            if(uSeq.length === seq.length) {
-                if(seq.length === 3) {
-                    setTimeout(() => goToLevel(3), 500);
-                } else setTimeout(addSeq, 800);
+            if(playerSeq.length === memSeq.length) {
+                if(memSeq.length === 3) {
+                    setTimeout(() => { alert("MEMORY CLEAR!"); goToLevel('PUZZLE'); }, 500);
+                } else setTimeout(nextMemRound, 800);
             }
         }
 
-        // --- LVL 3: QUIZ ---
-        const qs = [
-            { em:"🥥", zm:"scale(5)", ops:["Planet Mars", "Batok Kelapa"], ans:1 },
-            { em:"🎤", zm:"scale(4)", ops:["Mic Dosen", "Gagang Pintu"], ans:0 }
-        ];
-        let qI = 0;
-        function initQuiz() {
-            qI = 0; loadQ();
-        }
-        function loadQ() {
-            if(qI >= qs.length) { goToLevel(4); return; }
-            const q = qs[qI];
-            document.getElementById('q-img').innerText = q.em;
-            document.getElementById('q-img').style.transform = q.zm;
-            const c = document.getElementById('q-options');
+        // --- GAME 3: PUZZLE (3x3 Sliding) ---
+        // Image is 300x300, tile is 60x60 (container 180x180 -> 3x3 grid means 60px tiles)
+        // Background-size must be 180px
+        let puzBoard = [0,1,2,3,4,5,6,7,8]; // 8 is empty
+        function initPuzzle() {
+            const c = document.getElementById('puzzle-container');
             c.innerHTML = '';
-            q.ops.forEach((o, i) => {
-                const b = document.createElement('button');
-                b.className = "bg-gray-700 hover:bg-gray-600 py-3 rounded text-[10px] border border-gray-500";
-                b.innerText = o;
-                b.onclick = () => {
-                    if(i === q.ans) { qI++; loadQ(); }
-                    else document.getElementById('q-msg').innerText = "SALAH! :P";
+            // Shuffle (Simple swap 20 times)
+            for(let i=0; i<20; i++) {
+                let r1 = Math.floor(Math.random()*9);
+                let r2 = Math.floor(Math.random()*9);
+                [puzBoard[r1], puzBoard[r2]] = [puzBoard[r2], puzBoard[r1]];
+            }
+            renderPuzzle();
+        }
+        function renderPuzzle() {
+            const c = document.getElementById('puzzle-container');
+            c.innerHTML = '';
+            puzBoard.forEach((val, idx) => {
+                const d = document.createElement('div');
+                d.style.width = '60px'; d.style.height = '60px';
+                d.style.position = 'absolute';
+                // Grid pos
+                let row = Math.floor(idx/3); let col = idx%3;
+                d.style.top = (row*60)+'px'; d.style.left = (col*60)+'px';
+                
+                if(val !== 8) { // Not empty
+                    d.className = 'puzzle-tile';
+                    // Calculate bg pos based on val
+                    let bRow = Math.floor(val/3); let bCol = val%3;
+                    d.style.backgroundPosition = `-${bCol*60}px -${bRow*60}px`;
+                    d.style.backgroundSize = '180px 180px';
+                    d.onclick = () => moveTile(idx);
+                } else {
+                    d.className = 'puzzle-empty';
                 }
-                c.appendChild(b);
+                c.appendChild(d);
             });
+            checkPuzWin();
+        }
+        function moveTile(idx) {
+            // Find empty
+            let emptyIdx = puzBoard.indexOf(8);
+            // Check adjacency
+            let row = Math.floor(idx/3), col = idx%3;
+            let eRow = Math.floor(emptyIdx/3), eCol = emptyIdx%3;
+            if(Math.abs(row-eRow) + Math.abs(col-eCol) === 1) {
+                [puzBoard[idx], puzBoard[emptyIdx]] = [puzBoard[emptyIdx], puzBoard[idx]];
+                renderPuzzle();
+            }
+        }
+        function checkPuzWin() {
+            // Simplified check: if 0,1,2 are correct, assume win for demo purpose or check all
+            // For robust game: check string
+            if(puzBoard.join('') === '012345678') {
+                setTimeout(()=>{ alert("PUZZLE SOLVED!"); goToLevel('VIDEO'); }, 300);
+            }
         }
 
-        // --- VIDEO ---
-        const v = document.getElementById('final-video');
-        const pop = document.getElementById('rpg-popup');
-        v.addEventListener('ended', () => { v.pause(); pop.classList.remove('hidden'); });
-        function vidToggle() { v.paused ? v.play() : v.pause(); pop.classList.add('hidden'); }
-        function vidReplay() { v.currentTime = 0; v.play(); pop.classList.add('hidden'); }
-        function vidMute() { v.muted = !v.muted; }
-        function vidFull() { 
-            const el = document.getElementById('game-container');
-            if(el.requestFullscreen) el.requestFullscreen();
+        // --- VIDEO LOGIC ---
+        const v = document.getElementById('game-video');
+        const vSlide = document.getElementById('vid-slider');
+        v.addEventListener('timeupdate', () => {
+            vSlide.value = (v.currentTime/v.duration)*100;
+            if(!v.ended) document.getElementById('end-popup').style.display='none';
+        });
+        v.addEventListener('ended', () => {
+            v.pause();
+            document.getElementById('end-popup').style.display = 'flex';
+        });
+        vSlide.addEventListener('input', () => v.currentTime = (vSlide.value/100)*v.duration);
+        function replayVid() {
+            v.currentTime = 0; v.play();
+            document.getElementById('end-popup').style.display='none';
         }
 
-        // Start Resizer
-        window.addEventListener('load', autoScale);
+        // Auto Scale on Load
+        scaleConsole();
     </script>
 </body>
 </html>
